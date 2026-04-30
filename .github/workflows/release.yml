@@ -1,0 +1,29 @@
+name: Tag and Release
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: "Checkout files"
+      uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore EzRabbitMQ.sln
+    - name: Build
+      run: dotnet build EzRabbitMQ.sln --no-restore -c Release
+    - name: Release Tag Updater
+      uses: sersoft-gmbh/running-release-tags-action@v3.0
+    - name: Generate a NuGet package
+      run: dotnet pack ./Src/EzRabbitMQ/EzRabbitMQ.csproj -p:PackageVersion=${{ github.ref_name }} --no-build -c Release -o .
+    - name: Push to GitHub package registry
+      run: dotnet nuget push *.nupkg -s 'https://api.nuget.org/v3/index.json' -k ${{ secrets.NUGET_TOKEN }} --skip-duplicate
+   

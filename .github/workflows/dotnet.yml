@@ -21,15 +21,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore EzRabbitMQ.sln
     - name: Build
-      run: dotnet build EzRabbitMQ.sln --no-restore
+      run: dotnet build EzRabbitMQ.sln --no-restore -c Release
     - uses: mer-team/rabbitmq-mng-action@v1.2
       with:
         RABBITMQ_TAG: '3-management-alpine'
     - name: Unittests
       uses: zyborg/dotnet-tests-report@ce730c068bb73480dcb37c02d40890bf8b44c953
-#    - name: Publish NuGet
-#      uses: brandedoutcast/publish-nuget@v2.5.5
-#      with:
-#        PROJECT_FILE_PATH: ./Src/EzRabbitMQ/EzRabbitMQ.csproj
-#        NUGET_KEY: $NUGET_TOKEN
-   

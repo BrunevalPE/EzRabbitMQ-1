@@ -2,7 +2,7 @@
 
 <img src="https://github.com/NymCorp/EzRabbitMQ/blob/main/docs/images/logo.png" width="200"  alt="EzRabbitMQ logo"/>
 
-[![.NET](https://github.com/BrunevalPE/EzRabbitMQ/actions/workflows/dotnet.yml/badge.svg)](https://github.com/BrunevalPE/EzRabbitMQ/actions/workflows/dotnet.yml)
+[![.NET](https://github.com/NymCorp/EzRabbitMQ/actions/workflows/dotnet.yml/badge.svg)](https://github.com/NymCorp/EzRabbitMQ/actions/workflows/dotnet.yml)
 
 The main goal of this library is simplifying the usage of **RabbitMQ dotnet client**.
 
@@ -15,6 +15,8 @@ When you create a `Mailbox` you can specify the `ConsumerOptions` allowing you t
 
 ### Install
 
+![Nuget](https://img.shields.io/nuget/dt/EzRabbitMQ)
+
 `dotnet add package EzRabbitMQ`
 
 ### Register services EzRabbitMQ services :
@@ -26,8 +28,8 @@ services.AddEzRabbitMQ();
 
 ## Requirements:
 
-- .Net 5 / .Net Core 6
-- RabbitMQ Client version allowed from [6.2.2,]
+- .Net 5 / .Net Core 6,7,8
+- RabbitMQ Client version allowed from [6.4.0,]
 
 ## Usage:
 
