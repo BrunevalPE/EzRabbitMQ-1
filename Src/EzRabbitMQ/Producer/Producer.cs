@@ -126,7 +126,7 @@ public class Producer : IDisposable
         }
 
         _session.Properties.Type = type;
-        _session.Model.BasicPublishAsync(_options.ExchangeName, _options.RoutingKey, false, _session.Properties, new ReadOnlyMemory<byte>(body)).GetAwaiter().GetResult();
+        _session.Model.BasicPublishAsync(_options.ExchangeName, _options.RoutingKey, false, _session.Properties, new ReadOnlyMemory<byte>(body)).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />

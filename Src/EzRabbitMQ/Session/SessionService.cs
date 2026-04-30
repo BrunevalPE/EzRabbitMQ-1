@@ -106,7 +106,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            Model = Connection.Connection?.CreateChannelAsync().GetAwaiter().GetResult();
+            Model = Connection.Connection?.CreateChannelAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
         catch
         {
