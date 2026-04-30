@@ -49,10 +49,10 @@ public class SessionService : ISessionService
     }
 
     /// <inheritdoc />
-    public IModel? Model { get; private set; }
+    public IChannel? Model { get; private set; }
 
     /// <inheritdoc />
-    public IBasicProperties? Properties { get; private set; }
+    public BasicProperties? Properties { get; private set; }
 
     /// <inheritdoc />
     public ITelemetryService Telemetry { get; }
@@ -66,7 +66,7 @@ public class SessionService : ISessionService
     public EzRabbitMQConfig Config { get; }
 
     /// <inheritdoc />
-    public void SetProperties(IBasicProperties properties)
+    public void SetProperties(BasicProperties properties)
     {
         Properties = properties;
     }
@@ -106,7 +106,7 @@ public class SessionService : ISessionService
     {
         try
         {
-            Model = Connection.Connection?.CreateModel();
+            Model = Connection.Connection?.CreateChannelAsync().GetAwaiter().GetResult();
         }
         catch
         {
@@ -119,30 +119,32 @@ public class SessionService : ISessionService
             return;
         }
 
-        Properties = Model.CreateBasicProperties();
+        Properties = new BasicProperties();
 
-        Model.CallbackException -= OnCallbackException;
-        Model.ModelShutdown -= OnModelShutdown;
+        Model.CallbackExceptionAsync -= OnCallbackExceptionAsync;
+        Model.ChannelShutdownAsync -= OnChannelShutdownAsync;
 
-        Model.CallbackException += OnCallbackException;
-        Model.ModelShutdown += OnModelShutdown;
+        Model.CallbackExceptionAsync += OnCallbackExceptionAsync;
+        Model.ChannelShutdownAsync += OnChannelShutdownAsync;
 
         Logger.LogDebug("Session created : {ChannelNumber}", Model.ChannelNumber);
     }
 
-    private void OnModelShutdown(object? sender, ShutdownEventArgs e)
+    private Task OnChannelShutdownAsync(object? sender, ShutdownEventArgs e)
     {
         if (e.ReplyCode != 200)
         {
-            Logger.LogError("OnModelShutdown trigger with message : {ReplyText}", e.ReplyText);
-            return;
+            Logger.LogError("OnChannelShutdown trigger with message : {ReplyText}", e.ReplyText);
+            return Task.CompletedTask;
         }
 
-        Logger.LogDebug("Model shutdown {CloseReason}, {ChannelNumber}", Model?.CloseReason, Model?.ChannelNumber);
+        Logger.LogDebug("Channel shutdown {CloseReason}, {ChannelNumber}", Model?.CloseReason, Model?.ChannelNumber);
+        return Task.CompletedTask;
     }
 
-    private void OnCallbackException(object? sender, CallbackExceptionEventArgs e)
+    private Task OnCallbackExceptionAsync(object? sender, CallbackExceptionEventArgs e)
     {
         Logger.LogError(e.Exception, "RabbitMQ Channel exception occured {ChannelNumber}", Model?.ChannelNumber);
+        return Task.CompletedTask;
     }
 }

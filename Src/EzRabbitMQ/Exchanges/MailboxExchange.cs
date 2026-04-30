@@ -38,9 +38,9 @@ public sealed class MailboxExchange : DeletableResourceBase
 
         try
         {
-            _session.Model?.ExchangeDeclare(_options.ExchangeName, _options.ExchangeType.Type(),
+            _session.Model?.ExchangeDeclareAsync(_options.ExchangeName, _options.ExchangeType.Type(),
                 _consumerOptions.ExchangeDurable,
-                _consumerOptions.ExchangeAutoDelete, _consumerOptions.ExchangeDeclareArguments);
+                _consumerOptions.ExchangeAutoDelete, _consumerOptions.ExchangeDeclareArguments).GetAwaiter().GetResult();
         }
         catch (Exception e)
         {
@@ -51,7 +51,7 @@ public sealed class MailboxExchange : DeletableResourceBase
     /// <inheritdoc />
     protected override void DeleteResource(bool ifUnused, bool _)
     {
-        _session.Model?.ExchangeDelete(_options.ExchangeName, ifUnused);
+        _session.Model?.ExchangeDeleteAsync(_options.ExchangeName, ifUnused).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />

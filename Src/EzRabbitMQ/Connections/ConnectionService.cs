@@ -43,7 +43,7 @@ public class ConnectionService : IConnectionService
         if (!Connection?.IsOpen ?? true)
         {
             _pollyService.TryExecute<CreateConnectionException>(() =>
-                Connection = _connectionFactory.CreateConnection()
+                Connection = _connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult()
             );
             _telemetry.Trace("Connection established");
         }

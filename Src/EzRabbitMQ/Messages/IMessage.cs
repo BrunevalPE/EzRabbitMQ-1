@@ -41,5 +41,5 @@ public interface IMessage<T>
     /// <summary>
     /// Message properties
     /// </summary>
-    public IBasicProperties BasicProperties { get; init; }
+    public IReadOnlyBasicProperties BasicProperties { get; init; }
 }

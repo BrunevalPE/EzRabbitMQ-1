@@ -24,8 +24,6 @@ public static class EzRabbitMQExtensions
 
         configure?.Invoke(config);
 
-        config.Connection.DispatchConsumersAsync = config.IsAsyncDispatcher;
-
         services
             .AddSingleton(config)
             .AddSingleton<ProducerExtractInformation>()

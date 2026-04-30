@@ -1,5 +1,6 @@
 ﻿using EzRabbitMQ.Extensions;
 using EzRabbitMQ.Reflection;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace EzRabbitMQ;
@@ -28,15 +29,10 @@ public abstract class RpcServerBase : MailboxBase
     /// <inheritdoc />
     protected override async Task MessageHandle(object? sender, BasicDeliverEventArgs @event)
     {
-        var replyProps = Session.Model?.CreateBasicProperties();
-
-        if (replyProps is null)
+        var replyProps = new BasicProperties
         {
-            Logger.LogError("Unable to create message properties from current connection channel");
-            return;
-        }
-
-        replyProps.CorrelationId = @event.BasicProperties.CorrelationId;
+            CorrelationId = @event.BasicProperties.CorrelationId
+        };
 
         var messageType = @event.BasicProperties.Type;
 
@@ -62,12 +58,14 @@ public abstract class RpcServerBase : MailboxBase
 
         if (response is not null && Session.Model is not null)
         {
-            var props = Session.Model.CreateBasicProperties();
+            var props = new BasicProperties
+            {
+                CorrelationId = @event.BasicProperties.CorrelationId,
+                Type = response.GetType().AssemblyQualifiedName
+            };
             var body = Session.Config.SerializeData(response);
-            props.CorrelationId = @event.BasicProperties.CorrelationId;
-            props.Type = response.GetType().AssemblyQualifiedName;
 
-            Session.Model.BasicPublish("", @event.BasicProperties.ReplyTo, false, props, new ReadOnlyMemory<byte>(body));
+            await Session.Model.BasicPublishAsync("", @event.BasicProperties.ReplyTo, false, props, new ReadOnlyMemory<byte>(body));
         }
     }
 }
