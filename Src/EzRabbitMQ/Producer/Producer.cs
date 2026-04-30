@@ -85,7 +85,9 @@ public class Producer : IDisposable
             return;
         }
 
-        _session.Properties.DeliveryMode = (byte) _options.Properties.DeliveryMode;
+        _session.Properties.DeliveryMode = _options.Properties.DeliveryMode == DeliveryMode.Persistent
+            ? DeliveryModes.Persistent
+            : DeliveryModes.Transient;
 
         if (_options.Properties.Expiration.HasValue)
         {
@@ -124,7 +126,7 @@ public class Producer : IDisposable
         }
 
         _session.Properties.Type = type;
-        _session.Model.BasicPublish(_options.ExchangeName, _options.RoutingKey, _session.Properties, new ReadOnlyMemory<byte>(body));
+        _session.Model.BasicPublishAsync(_options.ExchangeName, _options.RoutingKey, false, _session.Properties, new ReadOnlyMemory<byte>(body)).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />

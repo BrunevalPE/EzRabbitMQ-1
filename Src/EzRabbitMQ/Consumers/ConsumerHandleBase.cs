@@ -75,7 +75,7 @@ public abstract class ConsumerHandleBase : IDisposable
     /// <summary>
     /// RabbitMQ Consumer
     /// </summary>
-    protected IBasicConsumer? Consumer { get; private set; }
+    protected IAsyncBasicConsumer? Consumer { get; private set; }
 
     /// <inheritdoc />
     public void Dispose()
@@ -86,55 +86,33 @@ public abstract class ConsumerHandleBase : IDisposable
     private void CreateConsumer()
     {
         using var operation = Session.Telemetry.Request(Options, "BasicConsumer created");
-        Consumer = Session.Config.IsAsyncDispatcher ? CreateAsyncConsumer() : CreateSyncConsumer();
+        Consumer = CreateAsyncConsumer();
     }
 
-    private IBasicConsumer CreateSyncConsumer()
-    {
-        var consumer = new EventingBasicConsumer(Session.Model);
-        consumer.Shutdown += Consumer_Shutdown;
-        consumer.Received += Consumer_Received;
-        consumer.Registered += Consumer_Registered;
-        consumer.Unregistered += Consumer_Unregistered;
-        consumer.ConsumerCancelled += Consumer_ConsumerCancelled;
-        return consumer;
-    }
-
-    private IBasicConsumer CreateAsyncConsumer()
+    private IAsyncBasicConsumer CreateAsyncConsumer()
     {
         var consumer = new AsyncEventingBasicConsumer(Session.Model);
-        consumer.Shutdown += AsyncConsumer_Shutdown;
-        consumer.Received += AsyncConsumer_Received;
-        consumer.Registered += AsyncConsumer_Registered;
-        consumer.Unregistered += AsyncConsumer_Unregistered;
-        consumer.ConsumerCancelled += AsyncConsumer_ConsumerCancelled;
+        consumer.ShutdownAsync += AsyncConsumer_ShutdownAsync;
+        consumer.ReceivedAsync += AsyncConsumer_ReceivedAsync;
+        consumer.RegisteredAsync += AsyncConsumer_RegisteredAsync;
+        consumer.UnregisteredAsync += AsyncConsumer_UnregisteredAsync;
         return consumer;
     }
 
-    private Task AsyncConsumer_Registered(object? sender, ConsumerEventArgs @event)
+    private Task AsyncConsumer_RegisteredAsync(object? sender, ConsumerEventArgs @event)
     {
         Session.Telemetry.Trace("Consumer registered", new() {{"consumerTag", ConsumerTag}});
 
         return Task.CompletedTask;
     }
 
-    private void Consumer_Registered(object? sender, ConsumerEventArgs @event)
-    {
-        AsyncConsumer_Registered(sender, @event).GetAwaiter().GetResult();
-    }
-
-    private Task AsyncConsumer_Received(object? sender, BasicDeliverEventArgs @event)
+    private Task AsyncConsumer_ReceivedAsync(object? sender, BasicDeliverEventArgs @event)
     {
         using var operation = Session.Telemetry.Dependency(Options, "OnMessageHandle");
 
         operation.Telemetry.Context.Operation.SetTelemetry(@event.BasicProperties);
 
         return MessageHandle(sender, @event);
-    }
-
-    private void Consumer_Received(object? sender, BasicDeliverEventArgs @event)
-    {
-        AsyncConsumer_Received(sender, @event).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -177,7 +155,7 @@ public abstract class ConsumerHandleBase : IDisposable
                 if (method is null)
                 {
                     Logger.LogError("Unable to find any matching method called: {MethodName} in your implementation : {ImplementationName}", OnMessageHandleName, GetType().Name);
-                    HandleOnMessageException(@event);
+                    await HandleOnMessageExceptionAsync(@event);
                     return;
                 }
 
@@ -186,39 +164,27 @@ public abstract class ConsumerHandleBase : IDisposable
 
             if (!ConsumerOptions.AutoAck)
             {
-                Session.Model?.BasicAck(@event.DeliveryTag, ConsumerOptions.AckMultiple);
+                await (Session.Model?.BasicAckAsync(@event.DeliveryTag, ConsumerOptions.AckMultiple) ?? ValueTask.CompletedTask);
             }
         }
         catch
         {
-            HandleOnMessageException(@event);
+            await HandleOnMessageExceptionAsync(@event);
             throw;
         }
     }
 
-    private void HandleOnMessageException(BasicDeliverEventArgs @event)
+    private async Task HandleOnMessageExceptionAsync(BasicDeliverEventArgs @event)
     {
         if (ConsumerOptions.AutoAck)
         {
             return;
         }
 
-        Session.Model?.BasicReject(@event.DeliveryTag, false);
+        await (Session.Model?.BasicRejectAsync(@event.DeliveryTag, false) ?? ValueTask.CompletedTask);
     }
 
-    private Task AsyncConsumer_ConsumerCancelled(object? sender, ConsumerEventArgs e)
-    {
-        Session.Telemetry.Trace("Consumer cancelled", new() {{"consumerTag", ConsumerTag}});
-
-        return Task.CompletedTask;
-    }
-
-    private void Consumer_ConsumerCancelled(object? sender, ConsumerEventArgs e)
-    {
-        AsyncConsumer_ConsumerCancelled(sender, e).GetAwaiter().GetResult();
-    }
-
-    private Task AsyncConsumer_Shutdown(object? sender, ShutdownEventArgs e)
+    private Task AsyncConsumer_ShutdownAsync(object? sender, ShutdownEventArgs e)
     {
         if (e.ReplyCode != 200)
         {
@@ -236,22 +202,12 @@ public abstract class ConsumerHandleBase : IDisposable
         return Task.CompletedTask;
     }
 
-    private void Consumer_Shutdown(object? sender, ShutdownEventArgs e)
-    {
-        AsyncConsumer_Shutdown(sender, e).Wait();
-    }
-
-    private Task AsyncConsumer_Unregistered(object? sender, ConsumerEventArgs e)
+    private Task AsyncConsumer_UnregisteredAsync(object? sender, ConsumerEventArgs e)
     {
         Session.Telemetry.Trace("Consumer unregistered", new() {{"consumerTag", ConsumerTag}});
 
         Logger.LogDebug("Consumer unregistered : {ConsumerTag}", ConsumerTag);
 
         return Task.CompletedTask;
-    }
-
-    private void Consumer_Unregistered(object? sender, ConsumerEventArgs e)
-    {
-        AsyncConsumer_Unregistered(sender, e).GetAwaiter().GetResult();
     }
 }

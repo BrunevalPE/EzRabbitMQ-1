@@ -13,7 +13,7 @@ public static class TelemetryExtensions
     /// </summary>
     /// <param name="context">The telemetry context to set</param>
     /// <param name="properties">Event's properties containing headers that will be read to find operation Id</param>
-    public static void SetTelemetry(this OperationContext context, IBasicProperties properties)
+    public static void SetTelemetry(this OperationContext context, IReadOnlyBasicProperties properties)
     {
         if (properties.Headers != null && properties.Headers.TryGetValue(Constants.TelemetryOperationIdHeaderName, out var operationId))
         {

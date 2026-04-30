@@ -67,7 +67,7 @@ public abstract class MailboxBase : ConsumerHandleBase
         try
         {
             var consumerTag =
-                Session.Model.BasicConsume(Options.QueueName, ConsumerOptions.AutoAck, ConsumerTag, Consumer);
+                Session.Model.BasicConsumeAsync(Options.QueueName, ConsumerOptions.AutoAck, ConsumerTag, false, false, null, Consumer).GetAwaiter().GetResult();
             Logger.LogDebug("Consumer connected to queue : {QueueName} tag: {ConsumerTag}", Options.QueueName,
                 consumerTag);
         }
@@ -83,14 +83,14 @@ public abstract class MailboxBase : ConsumerHandleBase
     {
         if (Options.ExchangeType is ExchangeType.RpcServer)
         {
-            Session.Model?.BasicQos(0, 1, false);
+            Session.Model?.BasicQosAsync(0, 1, false).GetAwaiter().GetResult();
             return;
         }
 
         if (ConsumerOptions.PrefetchSize > 0 || ConsumerOptions.PrefetchCount > 0)
         {
-            Session.Model?.BasicQos(ConsumerOptions.PrefetchSize, ConsumerOptions.PrefetchCount,
-                ConsumerOptions.PrefetchGlobal);
+            Session.Model?.BasicQosAsync(ConsumerOptions.PrefetchSize, ConsumerOptions.PrefetchCount,
+                ConsumerOptions.PrefetchGlobal).GetAwaiter().GetResult();
         }
     }
 }

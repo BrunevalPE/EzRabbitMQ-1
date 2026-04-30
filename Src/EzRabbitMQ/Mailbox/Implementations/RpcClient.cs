@@ -2,6 +2,7 @@ using System.Text.Json;
 using EzRabbitMQ.Exceptions;
 using EzRabbitMQ.Extensions;
 using EzRabbitMQ.Reflection;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace EzRabbitMQ;
@@ -67,13 +68,14 @@ public class RpcClient : MailboxBase
         var sw = Stopwatch.StartNew();
 
         var body = Session.Config.SerializeData(request);
-        var props = Session.Model.CreateBasicProperties();
+        var props = new BasicProperties
+        {
+            ReplyTo = Constants.RpcReplyToQueue,
+            CorrelationId = Options.CorrelationId,
+            Type = request.GetType().AssemblyQualifiedName
+        };
 
-        props.ReplyTo = Constants.RpcReplyToQueue;
-        props.CorrelationId = Options.CorrelationId;
-        props.Type = request.GetType().AssemblyQualifiedName;
-
-        Session.Model.BasicPublish(ExchangeType.RpcServer.Name(), Options.RoutingKey, false, props, new ReadOnlyMemory<byte>(body));
+        Session.Model.BasicPublishAsync(ExchangeType.RpcServer.Name(), Options.RoutingKey, false, props, new ReadOnlyMemory<byte>(body)).GetAwaiter().GetResult();
         Logger.LogDebug("Message sent to {Exchange} routing Key: {RoutingKey}", ExchangeType.RpcServer.Name(), Options.RoutingKey);
 
         var timeoutCts = new CancellationTokenSource(ConsumerOptions.RpcCallTimeout);

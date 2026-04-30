@@ -35,7 +35,7 @@ public class Message<T> : IMessage<T>
     public bool Redelivered { get; init; }
 
     /// <inheritdoc />
-    public IBasicProperties BasicProperties { get; init; }
+    public IReadOnlyBasicProperties BasicProperties { get; init; }
 
     /// <inheritdoc />
     public string ConsumerTag { get; init; }

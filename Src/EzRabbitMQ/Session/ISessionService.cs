@@ -11,12 +11,12 @@ public interface ISessionService : IDisposable
     /// <summary>
     /// RabbitMQ channel
     /// </summary>
-    IModel? Model { get; }
+    IChannel? Model { get; }
 
     /// <summary>
     /// Session's properties
     /// </summary>
-    IBasicProperties? Properties { get; }
+    BasicProperties? Properties { get; }
 
     /// <summary>
     /// Telemetry service
@@ -37,7 +37,7 @@ public interface ISessionService : IDisposable
     /// Override the current session properties
     /// </summary>
     /// <param name="properties">RabbitMQ session properties</param>
-    void SetProperties(IBasicProperties properties);
+    void SetProperties(BasicProperties properties);
 
     /// <summary>
     /// Check the current channel and if isClosed is true the current channel
