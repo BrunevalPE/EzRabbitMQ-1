@@ -50,10 +50,10 @@ public class RpcClient : MailboxBase
     {
         if (Session.Config.RpcPollyPolicy is not null)
         {
-            return Session.Config.RpcPollyPolicy.ExecuteAsync(async () => (await CallInternal<T>(request, externalCancellationToken))!).GetAwaiter().GetResult() as T;
+            return Session.Config.RpcPollyPolicy.ExecuteAsync(async () => (await CallInternal<T>(request, externalCancellationToken))!).ConfigureAwait(false).GetAwaiter().GetResult() as T;
         }
 
-        return CallInternal<T>(request, externalCancellationToken).GetAwaiter().GetResult();
+        return CallInternal<T>(request, externalCancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     private Task<T?> CallInternal<T>(object request, CancellationToken externalCancellationToken = default) where T : class
@@ -75,7 +75,7 @@ public class RpcClient : MailboxBase
             Type = request.GetType().AssemblyQualifiedName
         };
 
-        Session.Model.BasicPublishAsync(ExchangeType.RpcServer.Name(), Options.RoutingKey, false, props, new ReadOnlyMemory<byte>(body)).GetAwaiter().GetResult();
+        Session.Model.BasicPublishAsync(ExchangeType.RpcServer.Name(), Options.RoutingKey, false, props, new ReadOnlyMemory<byte>(body)).ConfigureAwait(false).GetAwaiter().GetResult();
         Logger.LogDebug("Message sent to {Exchange} routing Key: {RoutingKey}", ExchangeType.RpcServer.Name(), Options.RoutingKey);
 
         var timeoutCts = new CancellationTokenSource(ConsumerOptions.RpcCallTimeout);

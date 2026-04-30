@@ -55,7 +55,7 @@ public sealed class MailboxQueue : DeletableResourceBase
             var response = _session.Model?.QueueDeclareAsync(_options.QueueName,
                 _consumerOptions.QueueDurable,
                 exclusive, _consumerOptions.QueueAutoDelete,
-                _consumerOptions.QueueDeclareArguments).GetAwaiter().GetResult();
+                _consumerOptions.QueueDeclareArguments).ConfigureAwait(false).GetAwaiter().GetResult();
 
             _logger.LogDebug("Queue declare response: {Response} for {Exchange}", JsonSerializer.Serialize(response), _options.ExchangeName);
         }
@@ -68,7 +68,7 @@ public sealed class MailboxQueue : DeletableResourceBase
     /// <inheritdoc />
     protected override void DeleteResource(bool ifUnused, bool ifEmpty)
     {
-        _session.Model?.QueueDeleteAsync(_options.QueueName, ifUnused, ifEmpty).GetAwaiter().GetResult();
+        _session.Model?.QueueDeleteAsync(_options.QueueName, ifUnused, ifEmpty).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />
@@ -136,7 +136,7 @@ public sealed class MailboxQueue : DeletableResourceBase
         try
         {
             _session.Model?.QueueBindAsync(_options.QueueName, _options.ExchangeName, _options.RoutingKey,
-                _consumerOptions.QueueBindArguments).GetAwaiter().GetResult();
+                _consumerOptions.QueueBindArguments).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         catch (Exception e)
         {
